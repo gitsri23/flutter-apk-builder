@@ -18,6 +18,10 @@ on:
       asset_urls:
         description: 'Comma separated image URLs'
         required: false
+      app_icon_url:
+        description: 'App Icon Image URL (Direct PNG/JPG link)'
+        required: false
+        default: ''
 
 jobs:
   build:
@@ -34,13 +38,16 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: 📁 Creating Project & Assets
+      - name: 📁 Creating Project & Adding Permissions
         run: |
           flutter create --org ${{ github.event.inputs.package_name }} ${{ github.event.inputs.app_name }}
           cd ${{ github.event.inputs.app_name }}
           
           # Update version
           sed -i "s/version: 1.0.0+1/version: ${{ github.event.inputs.app_version }}/g" pubspec.yaml
+          
+          # ఇక్కడే అసలు మ్యాజిక్: AndroidManifest.xml లో ఇంటర్నెట్ పర్మిషన్ యాడ్ చేస్తున్నాం
+          sed -i 's/<application/<uses-permission android:name="android.permission.INTERNET"\/>\n    <application/g' android/app/src/main/AndroidManifest.xml
           
           # Write main.dart
           cat << 'EOF' > lib/main.dart
@@ -58,7 +65,21 @@ jobs:
             echo "    - assets/" >> pubspec.yaml
           fi
 
-      # ఇది అసలైన మ్యాజిక్! నువ్వు ఏ ప్యాకేజి వాడినా ఆటోమేటిక్ గా డిటెక్ట్ చేసి యాడ్ చేస్తుంది 🔥
+      - name: 🖼️ Setup App Icon
+        run: |
+          cd ${{ github.event.inputs.app_name }}
+          if [ -n "${{ github.event.inputs.app_icon_url }}" ]; then
+            mkdir -p assets
+            wget -q -O assets/app_icon.png "${{ github.event.inputs.app_icon_url }}"
+            flutter pub add dev:flutter_launcher_icons
+            echo "" >> pubspec.yaml
+            echo "flutter_launcher_icons:" >> pubspec.yaml
+            echo "  android: true" >> pubspec.yaml
+            echo "  ios: true" >> pubspec.yaml
+            echo "  image_path: \"assets/app_icon.png\"" >> pubspec.yaml
+            flutter pub run flutter_launcher_icons
+          fi
+
       - name: 📦 Auto-Detect & Install Packages
         run: |
           cd ${{ github.event.inputs.app_name }}
