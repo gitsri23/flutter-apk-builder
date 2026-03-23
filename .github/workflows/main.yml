@@ -4,56 +4,72 @@ on:
   workflow_dispatch:
     inputs:
       app_name:
-        description: 'App Name (e.g., safecash)'
+        description: 'App Name'
         required: true
-        default: 'my_app'
       package_name:
-        description: 'Package Name (e.g., com.swagnivas.safecash)'
+        description: 'Package Name'
         required: true
-        default: 'com.example.myapp'
       app_version:
-        description: 'Version (e.g., 1.0.0+1)'
+        description: 'Version'
         required: true
-        default: '1.0.0+1'
       dart_code:
-        description: 'Paste main.dart code here'
+        description: 'main.dart code'
         required: true
+      asset_urls:
+        description: 'Comma separated image URLs'
+        required: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: ☕ Setup Java
+      - name: ⚙️ Setup Environment
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: 🐦 Setup Flutter
+      - name: 🐦 Setting up Flutter SDK
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      - name: 🛠️ Create Flutter Project & Add Code
+      - name: 📁 Creating Project & Assets
         run: |
-          # 1. వెబ్‌సైట్ లో ఇచ్చిన పేర్లతో కొత్త ఫ్లట్టర్ ప్రాజెక్ట్ క్రియేట్ చేస్తుంది
           flutter create --org ${{ github.event.inputs.package_name }} ${{ github.event.inputs.app_name }}
           cd ${{ github.event.inputs.app_name }}
           
-          # 2. వెబ్‌సైట్ లో ఇచ్చిన వర్షన్ ని pubspec.yaml లో అప్‌డేట్ చేస్తుంది
+          # Update version
           sed -i "s/version: 1.0.0+1/version: ${{ github.event.inputs.app_version }}/g" pubspec.yaml
           
-          # 3. వెబ్‌సైట్ నుండి వచ్చిన Dart కోడ్ ని main.dart లో రాస్తుంది
+          # Write main.dart
           cat << 'EOF' > lib/main.dart
           ${{ github.event.inputs.dart_code }}
           EOF
+          
+          # Download Assets if provided
+          if [ -n "${{ github.event.inputs.asset_urls }}" ]; then
+            mkdir assets
+            IFS=',' read -ra ADDR <<< "${{ github.event.inputs.asset_urls }}"
+            for i in "${ADDR[@]}"; do
+              wget -q -P assets/ "$i"
+            done
+            # Add to pubspec.yaml
+            echo "  assets:" >> pubspec.yaml
+            echo "    - assets/" >> pubspec.yaml
+          fi
 
-      - name: 📦 Build Release APK
+      - name: 📦 Running flutter pub get
+        run: |
+          cd ${{ github.event.inputs.app_name }}
+          flutter pub get
+
+      - name: 🔨 Compiling Dart & Building APK
         run: |
           cd ${{ github.event.inputs.app_name }}
           flutter build apk --release
 
-      - name: 🚀 Upload APK
+      - name: ✅ Uploading Finished APK
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.inputs.app_name }}-APK
