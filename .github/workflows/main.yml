@@ -1,22 +1,28 @@
-name: Dynamic APK Builder Pro
+name: Ultimate Auto APK Builder
 
 on:
   workflow_dispatch:
     inputs:
-      app_folder:
-        description: 'నీ యాప్ ఉన్న ఫోల్డర్ పేరు (Ex: safecash_app)'
+      app_name:
+        description: 'App Name (e.g., safecash)'
         required: true
-        default: '.' # డైరెక్ట్ గా బయటే ఉంటే డాట్ (.) వాడతాం
+        default: 'my_app'
+      package_name:
+        description: 'Package Name (e.g., com.swagnivas.safecash)'
+        required: true
+        default: 'com.example.myapp'
+      app_version:
+        description: 'Version (e.g., 1.0.0+1)'
+        required: true
+        default: '1.0.0+1'
+      dart_code:
+        description: 'Paste main.dart code here'
+        required: true
 
 jobs:
   build:
-    name: Build & Upload Dynamic APK
     runs-on: ubuntu-latest
-
     steps:
-      - name: 📥 Checkout Repository
-        uses: actions/checkout@v4
-
       - name: ☕ Setup Java
         uses: actions/setup-java@v4
         with:
@@ -28,17 +34,28 @@ jobs:
         with:
           channel: 'stable'
 
-      # ఇక్కడే అసలు మ్యాజిక్ జరుగుతుంది. నువ్వు ఇచ్చిన ఫోల్డర్ లోకి వెళ్లి బిల్డ్ చేస్తుంది.
-      - name: 🛠️ Build Release APK
+      - name: 🛠️ Create Flutter Project & Add Code
         run: |
-          cd ${{ github.event.inputs.app_folder }}
-          flutter pub get
+          # 1. వెబ్‌సైట్ లో ఇచ్చిన పేర్లతో కొత్త ఫ్లట్టర్ ప్రాజెక్ట్ క్రియేట్ చేస్తుంది
+          flutter create --org ${{ github.event.inputs.package_name }} ${{ github.event.inputs.app_name }}
+          cd ${{ github.event.inputs.app_name }}
+          
+          # 2. వెబ్‌సైట్ లో ఇచ్చిన వర్షన్ ని pubspec.yaml లో అప్‌డేట్ చేస్తుంది
+          sed -i "s/version: 1.0.0+1/version: ${{ github.event.inputs.app_version }}/g" pubspec.yaml
+          
+          # 3. వెబ్‌సైట్ నుండి వచ్చిన Dart కోడ్ ని main.dart లో రాస్తుంది
+          cat << 'EOF' > lib/main.dart
+          ${{ github.event.inputs.dart_code }}
+          EOF
+
+      - name: 📦 Build Release APK
+        run: |
+          cd ${{ github.event.inputs.app_name }}
           flutter build apk --release
 
-      # ఏ యాప్ ని బిల్డ్ చేసామో ఆ పేరుతోనే APK సేవ్ అవుతుంది
-      - name: 🚀 Upload Artifact (APK)
+      - name: 🚀 Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.inputs.app_folder }}-APK
-          path: ${{ github.event.inputs.app_folder }}/build/app/outputs/flutter-apk/app-release.apk
+          name: ${{ github.event.inputs.app_name }}-APK
+          path: ${{ github.event.inputs.app_name }}/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 7
