@@ -54,14 +54,15 @@ jobs:
             for i in "${ADDR[@]}"; do
               wget -q -P assets/ "$i"
             done
-            # Add to pubspec.yaml
             echo "  assets:" >> pubspec.yaml
             echo "    - assets/" >> pubspec.yaml
           fi
 
-      - name: 📦 Running flutter pub get
+      # ఇది అసలైన మ్యాజిక్! నువ్వు ఏ ప్యాకేజి వాడినా ఆటోమేటిక్ గా డిటెక్ట్ చేసి యాడ్ చేస్తుంది 🔥
+      - name: 📦 Auto-Detect & Install Packages
         run: |
           cd ${{ github.event.inputs.app_name }}
+          grep -oP '(?<=package:)[^/]+' lib/main.dart | grep -v '^flutter$' | sort -u | xargs -r flutter pub add
           flutter pub get
 
       - name: 🔨 Compiling Dart & Building APK
