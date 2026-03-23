@@ -1,14 +1,16 @@
-name: Flutter APK Builder Pro
+name: Dynamic APK Builder Pro
 
 on:
-  workflow_dispatch: # వెబ్‌సైట్ నుండి మాన్యువల్ గా ట్రిగ్గర్ చేయడానికి
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      app_folder:
+        description: 'నీ యాప్ ఉన్న ఫోల్డర్ పేరు (Ex: safecash_app)'
+        required: true
+        default: '.' # డైరెక్ట్ గా బయటే ఉంటే డాట్ (.) వాడతాం
 
 jobs:
   build:
-    name: Build & Upload APK
+    name: Build & Upload Dynamic APK
     runs-on: ubuntu-latest
 
     steps:
@@ -26,15 +28,17 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: 📦 Install Dependencies
-        run: flutter pub get
-
+      # ఇక్కడే అసలు మ్యాజిక్ జరుగుతుంది. నువ్వు ఇచ్చిన ఫోల్డర్ లోకి వెళ్లి బిల్డ్ చేస్తుంది.
       - name: 🛠️ Build Release APK
-        run: flutter build apk --release
+        run: |
+          cd ${{ github.event.inputs.app_folder }}
+          flutter pub get
+          flutter build apk --release
 
+      # ఏ యాప్ ని బిల్డ్ చేసామో ఆ పేరుతోనే APK సేవ్ అవుతుంది
       - name: 🚀 Upload Artifact (APK)
         uses: actions/upload-artifact@v4
         with:
-          name: SafeCash-Ledger-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 7 # 7 రోజులు మాత్రమే స్టోర్ అవుతుంది
+          name: ${{ github.event.inputs.app_folder }}-APK
+          path: ${{ github.event.inputs.app_folder }}/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 7
