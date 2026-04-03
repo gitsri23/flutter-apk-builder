@@ -1,4 +1,4 @@
-name: Ultimate Auto APK Builder
+Name: Ultimate Auto APK Builder
 
 on:
   workflow_dispatch:
@@ -69,15 +69,25 @@ jobs:
         run: |
           cd ${{ github.event.inputs.app_name }}
           if [ -n "${{ github.event.inputs.app_icon_url }}" ]; then
+            # 1. Create assets directory and download icon
             mkdir -p assets
             wget -q -O assets/app_icon.png "${{ github.event.inputs.app_icon_url }}"
+            
+            # 2. Add dependencies
             flutter pub add dev:flutter_launcher_icons
-            echo "" >> pubspec.yaml
-            echo "flutter_launcher_icons:" >> pubspec.yaml
-            echo "  android: true" >> pubspec.yaml
-            echo "  ios: true" >> pubspec.yaml
-            echo "  image_path: \"assets/app_icon.png\"" >> pubspec.yaml
-            flutter pub run flutter_launcher_icons
+            
+            # 3. Create a separate config file for icons (This is more reliable)
+            cat << 'EOF' > flutter_launcher_icons.yaml
+            flutter_launcher_icons:
+              android: true
+              ios: true
+              image_path: "assets/app_icon.png"
+              remove_alpha_ios: true
+            EOF
+            
+            # 4. Run the generator command
+            flutter pub get
+            flutter pub run flutter_launcher_icons:main
           fi
 
       - name: 📦 Auto-Detect & Install Packages
