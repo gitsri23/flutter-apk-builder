@@ -69,23 +69,31 @@ jobs:
         run: |
           cd ${{ github.event.inputs.app_name }}
           if [ -n "${{ github.event.inputs.app_icon_url }}" ]; then
-            # 1. Create assets directory and download icon
+            echo "Downloading App Icon..."
             mkdir -p assets
-            wget -q -O assets/app_icon.png "${{ github.event.inputs.app_icon_url }}"
+            # Download image and show errors if any
+            wget -O assets/app_icon.png "${{ github.event.inputs.app_icon_url }}"
             
-            # 2. Add dependencies
-            flutter pub add dev:flutter_launcher_icons
-            
-            # 3. Create a separate config file for icons using echo safely
-            echo "flutter_launcher_icons:" > flutter_launcher_icons.yaml
-            echo "  android: true" >> flutter_launcher_icons.yaml
-            echo "  ios: true" >> flutter_launcher_icons.yaml
-            echo "  image_path: \"assets/app_icon.png\"" >> flutter_launcher_icons.yaml
-            echo "  remove_alpha_ios: true" >> flutter_launcher_icons.yaml
-            
-            # 4. Run the generator command
-            flutter pub get
-            flutter pub run flutter_launcher_icons:main
+            # Check if file is successfully downloaded and is not empty
+            if [ -s assets/app_icon.png ]; then
+              echo "App icon downloaded successfully. Applying..."
+              flutter pub add --dev flutter_launcher_icons
+              
+              # Adding config directly to pubspec.yaml (100% reliable)
+              echo "" >> pubspec.yaml
+              echo "flutter_launcher_icons:" >> pubspec.yaml
+              echo "  android: \"launcher_icon\"" >> pubspec.yaml
+              echo "  ios: true" >> pubspec.yaml
+              echo "  image_path: \"assets/app_icon.png\"" >> pubspec.yaml
+              
+              # Run the generator
+              flutter pub get
+              dart run flutter_launcher_icons
+            else
+              echo "ERROR: Icon download failed or link is invalid. Default icon will be used."
+            fi
+          else
+            echo "No App Icon URL provided. Skipping custom icon setup."
           fi
 
       - name: 📦 Auto-Detect & Install Packages
