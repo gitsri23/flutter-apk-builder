@@ -1,0 +1,29 @@
+buildscript {
+    ext.kotlin_version = '1.8.22'
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // Classpath dependencies if any
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral() // ఇది ఉంటేనే FFmpeg ఎర్రర్ రాకుండా డౌన్‌లోడ్ అవుతుంది
+    }
+}
+
+rootProject.buildDir = '../build'
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+subprojects {
+    project.evaluationDependsOn(':app')
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
