@@ -1,4 +1,4 @@
-Name: Ultimate Auto APK Builder
+name: Ultimate Auto APK Builder
 
 on:
   workflow_dispatch:
