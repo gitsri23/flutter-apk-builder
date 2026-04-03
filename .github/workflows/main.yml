@@ -49,7 +49,7 @@ jobs:
           # ఇక్కడే అసలు మ్యాజిక్: AndroidManifest.xml లో ఇంటర్నెట్ పర్మిషన్ యాడ్ చేస్తున్నాం
           sed -i 's/<application/<uses-permission android:name="android.permission.INTERNET"\/>\n    <application/g' android/app/src/main/AndroidManifest.xml
           
-          # Write main.dart
+          # Write main.dart (EOF exact ga cat line tho align ayi undali)
           cat << 'EOF' > lib/main.dart
           ${{ github.event.inputs.dart_code }}
           EOF
@@ -76,7 +76,7 @@ jobs:
             # 2. Add dependencies
             flutter pub add dev:flutter_launcher_icons
             
-            # 3. Create a separate config file for icons (This is more reliable)
+            # 3. Create a separate config file for icons
             cat << 'EOF' > flutter_launcher_icons.yaml
             flutter_launcher_icons:
               android: true
