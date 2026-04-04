@@ -13,7 +13,7 @@ on:
         description: 'Version'
         required: true
       dart_code:
-        description: 'main.dart code (BASE64 encoded)'
+        description: 'main.dart code'
         required: true
       asset_urls:
         description: 'Comma separated image URLs'
@@ -39,6 +39,8 @@ jobs:
           channel: 'stable'
 
       - name: 📁 Creating Project & Adding Permissions
+        env:
+          DART_CODE: ${{ github.event.inputs.dart_code }}
         run: |
           flutter create --org ${{ github.event.inputs.package_name }} ${{ github.event.inputs.app_name }}
           cd ${{ github.event.inputs.app_name }}
@@ -46,16 +48,14 @@ jobs:
           # Update version
           sed -i "s/version: 1.0.0+1/version: ${{ github.event.inputs.app_version }}/g" pubspec.yaml
 
-          # Internet permission add
+          # Internet permission
           sed -i 's/<application/<uses-permission android:name="android.permission.INTERNET"\/>\n    <application/g' android/app/src/main/AndroidManifest.xml
 
-          # ✅ BASE64 DECODE METHOD - newlines preserved perfectly
-          echo '${{ github.event.inputs.dart_code }}' | base64 -d > lib/main.dart
+          # ✅ KEY FIX: printf preserves \n newlines from env var perfectly
+          printf '%s' "$DART_CODE" > lib/main.dart
 
-          # Verify file written correctly
-          echo "=== main.dart first 5 lines ==="
-          head -5 lib/main.dart
-          echo "=== Line count ==="
+          # Verify
+          echo "--- main.dart line count ---"
           wc -l lib/main.dart
 
           # Download Assets if provided
