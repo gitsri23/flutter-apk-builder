@@ -1,6 +1,20 @@
+name: jarvis_app
+description: Offline Jarvis Assistant
+publish_to: 'none'
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
 dependencies:
   flutter:
     sdk: flutter
-  image_picker: ^1.0.7
-  screenshot: ^2.3.0
-  image_gallery_saver: ^8.0.1
+  permission_handler: ^11.0.0
+  speech_to_text: ^6.6.0   # temp (later Whisper replace)
+  flutter_tts: ^3.8.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
