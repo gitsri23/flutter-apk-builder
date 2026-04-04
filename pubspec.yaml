@@ -9,7 +9,7 @@ dependencies:
   flutter:
     sdk: flutter
   permission_handler: ^11.0.0
-  speech_to_text: ^6.6.0   # temp (later Whisper replace)
+  speech_to_text: 7.3.0   # temp (later Whisper replace)
   flutter_tts: ^3.8.5
 
 dev_dependencies:
