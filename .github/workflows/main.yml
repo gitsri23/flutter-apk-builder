@@ -44,23 +44,19 @@ jobs:
         run: |
           flutter create --org ${{ github.event.inputs.package_name }} ${{ github.event.inputs.app_name }}
           cd ${{ github.event.inputs.app_name }}
-
+          
           # Update version
           sed -i "s/version: 1.0.0+1/version: ${{ github.event.inputs.app_version }}/g" pubspec.yaml
-
-          # Internet permission
+          
+          # AndroidManifest.xml లో ఇంటర్నెట్ పర్మిషన్ యాడ్ చేస్తున్నాం
           sed -i 's/<application/<uses-permission android:name="android.permission.INTERNET"\/>\n    <application/g' android/app/src/main/AndroidManifest.xml
-
-          # ✅ KEY FIX: printf preserves \n newlines from env var perfectly
-          printf '%s' "$DART_CODE" > lib/main.dart
-
-          # Verify
-          echo "--- main.dart line count ---"
-          wc -l lib/main.dart
-
+          
+          # Write main.dart safely without EOF
+          echo "$DART_CODE" > lib/main.dart
+          
           # Download Assets if provided
           if [ -n "${{ github.event.inputs.asset_urls }}" ]; then
-            mkdir -p assets
+            mkdir assets
             IFS=',' read -ra ADDR <<< "${{ github.event.inputs.asset_urls }}"
             for i in "${ADDR[@]}"; do
               wget -q -P assets/ "$i"
@@ -75,22 +71,29 @@ jobs:
           if [ -n "${{ github.event.inputs.app_icon_url }}" ]; then
             echo "Downloading App Icon..."
             mkdir -p assets
+            # Download image and show errors if any
             wget -O assets/app_icon.png "${{ github.event.inputs.app_icon_url }}"
+            
+            # Check if file is successfully downloaded and is not empty
             if [ -s assets/app_icon.png ]; then
               echo "App icon downloaded successfully. Applying..."
               flutter pub add --dev flutter_launcher_icons
+              
+              # Adding config directly to pubspec.yaml (100% reliable)
               echo "" >> pubspec.yaml
               echo "flutter_launcher_icons:" >> pubspec.yaml
               echo "  android: \"launcher_icon\"" >> pubspec.yaml
               echo "  ios: true" >> pubspec.yaml
               echo "  image_path: \"assets/app_icon.png\"" >> pubspec.yaml
+              
+              # Run the generator
               flutter pub get
               dart run flutter_launcher_icons
             else
-              echo "ERROR: Icon download failed. Default icon will be used."
+              echo "ERROR: Icon download failed or link is invalid. Default icon will be used."
             fi
           else
-            echo "No App Icon URL provided. Skipping."
+            echo "No App Icon URL provided. Skipping custom icon setup."
           fi
 
       - name: 📦 Auto-Detect & Install Packages
