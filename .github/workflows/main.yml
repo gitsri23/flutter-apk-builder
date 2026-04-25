@@ -50,7 +50,12 @@ jobs:
           
           # AndroidManifest.xml లో ఇంటర్నెట్ పర్మిషన్ యాడ్ చేస్తున్నాం
           sed -i 's/<application/<uses-permission android:name="android.permission.INTERNET"\/>\n    <application/g' android/app/src/main/AndroidManifest.xml
+          sed -i 's/<application/<uses-permission android:name="android.permission.READ_CONTACTS"\/>\n    <application/g' android/app/src/main/AndroidManifest.xml
+          sed -i 's/<application/<uses-permission android:name="android.permission.CALL_PHONE"\/>\n    <application/g' android/app/src/main/AndroidManifest.xml
           
+
+
+ 
           # Write main.dart safely without EOF
           echo "$DART_CODE" > lib/main.dart
           
